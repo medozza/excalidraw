@@ -37,9 +37,9 @@ jobs:
       - name: Remove source maps
         run: find excalidraw-app/build -name "*.map" -delete
 
+      # wrangler-action tries `yarn add wrangler` in the workspace root, which yarn rejects
       - name: Deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy excalidraw-app/build --project-name excalidraw-private --branch master --commit-dirty=true
+        run: npx --yes wrangler@4 pages deploy excalidraw-app/build --project-name excalidraw-private --branch master --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
