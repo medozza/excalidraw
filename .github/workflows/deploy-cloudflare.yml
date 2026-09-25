@@ -1,0 +1,45 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: master
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cloudflare
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build app
+        run: yarn build:app
+        env:
+          # Disable excalidraw.com's public share-link, collab and Firebase backends
+          VITE_APP_WS_SERVER_URL: ""
+          VITE_APP_BACKEND_V2_GET_URL: ""
+          VITE_APP_BACKEND_V2_POST_URL: ""
+          VITE_APP_FIREBASE_CONFIG: "{}"
+
+      - name: Remove source maps
+        run: find excalidraw-app/build -name "*.map" -delete
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy excalidraw-app/build --project-name excalidraw-private --branch master --commit-dirty=true
